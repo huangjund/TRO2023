@@ -25,11 +25,13 @@ H910 = [[1 0 0; 0 cos(q7) -sin(q7); 0 sin(q7) cos(q7)] [0;0;52.06];...
 
 % H25 = simplify(H23*H34*H45);
 % H29 = simplify(H27*H78*H89);
-H95 = TransInv(H89)*TransInv(H78)*TransInv(H27)*H23*H34*H45;
-Z = atan2(H95(3,2),H95(3,3)); Y = asin(-H95(3,1)); X = atan2(H95(2,1),H95(1,1));
-JZYX = simplify(jacobian([X;Y;Z],[q2,q3,q5,q6]));
+% H95 = TransInv(H89)*TransInv(H78)*TransInv(H27)*H23*H34*H45;
+% Z = atan2(H95(3,2),H95(3,3)); Y = asin(-H95(3,1)); X = atan2(H95(2,1),H95(1,1));
+% JZYX = simplify(jacobian([X;Y;Z],[q2,q3,q5,q6]));
 
 % se3mat1 = MatrixLog6(simplify(TransInv(H29)*H25)); %% SE3 -> se3 R4x4
 % V1 = se3ToVec(se3mat1); %% R6
 
+[S23, theta23] = AxisAng6(se3ToVec(MatrixLog6(H23)));
+[S27, theta27] = AxisAng6(se3ToVec(MatrixLog6(H27)));
 [S45, theta45] = AxisAng6(se3ToVec(MatrixLog6(H45)));
