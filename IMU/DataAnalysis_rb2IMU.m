@@ -1,6 +1,6 @@
 rotx = @(t) [1 0 0; 0 cos(t) -sin(t) ; 0 sin(t) cos(t)] ;
-roty = @(t) [cos(t) 0 sin(t) ; 0 1 0 ; -sin(t) 0  cos(t)] ;
 rotz = @(t) [cos(t) -sin(t) 0 ; sin(t) cos(t) 0 ; 0 0 1] ;
+roty = @(t) [cos(t) 0 sin(t) ; 0 1 0 ; -sin(t) 0  cos(t)] ;
 
 RB2_euler = quat2eul(RB2(:,4:end),'ZYX')*180/pi;
 RB3_euler = quat2eul(RB3(:,4:end),'ZYX')*180/pi;

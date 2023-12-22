@@ -1,0 +1,330 @@
+clear all;close all;clc;
+
+syms q1 q2 q3 q4 q5 q6 q7 real
+syms dq1 dq2 dq3 dq4 dq5 dq6 dq7 real
+len_y = -3e-3;
+len_z = 23.3e-3;
+
+H23 = [[cos(-pi/6) 0 sin(-pi/6); 0 1 0; -sin(-pi/6) 0 cos(-pi/6)] [-29.54*1e-3+q1; 0; 53.66*1e-3];...
+    0 0 0 1];
+H34 = [[1 0 0; 0 cos(0) -sin(0); 0 sin(0) cos(0)] [0; 0; 0];...
+    0 0 0 1];
+H45 = [[cos(pi/2) -sin(pi/2) 0; sin(pi/2) cos(pi/2) 0; 0 0 1]*...
+    [1 0 0; 0 cos(q3) -sin(q3); 0 sin(q3) cos(q3)] [1.35*1e-3; 0; 9.47*1e-3];...
+    0 0 0 1];
+H56 = [[1 0 0; 0 cos(q4-pi/4) -sin(q4-pi/4); 0 sin(q4-pi/4) cos(q4-pi/4)] [0;11.11*1e-3;50.86*1e-3];...
+    0 0 0 1];
+H6e = [[1 0 0; 0 1 0; 0 0 1] [0;len_y;len_z];...
+    0 0 0 1];
+
+H27 = [[cos(pi/6) 0 sin(pi/6); 0 1 0; -sin(pi/6) 0 cos(pi/6)] [29.54*1e-3-q1; 0; 53.66*1e-3];...
+    0 0 0 1];
+H78 = [[1 0 0; 0 cos(q5) -sin(q5); 0 sin(q5) cos(q5)] [0; 0; 0];...
+    0 0 0 1];
+H89 = [[cos(-pi/2) -sin(-pi/2) 0; sin(-pi/2) cos(-pi/2) 0; 0 0 1]*...
+    [1 0 0; 0 cos(q6) -sin(q6); 0 sin(q6) cos(q6)] [-1.35*1e-3; 0; 9.47*1e-3];...
+    0 0 0 1];
+H910 = [[1 0 0; 0 cos(q7-pi/4) -sin(q7-pi/4); 0 sin(q7-pi/4) cos(q7-pi/4)] [0;11.11*1e-3;50.86*1e-3];...
+    0 0 0 1];
+
+%% T
+H26 = H23*H34*H45*H56*H6e;
+%H26 = H23*H34*H45*H56;
+p26 = H26(1:3,4);
+R26 = H26(1:3,1:3);
+x = p26(1);
+y = p26(2);
+z = p26(3);
+R = H26(1:3,1:3);
+
+dR_dt = diff(R,q1)*dq1+diff(R,q2)*dq2+diff(R,q3)*dq3+diff(R,q4)*dq4;
+Sw = dR_dt*R';
+wx = Sw(3,2);
+wy = Sw(1,3);
+wz = Sw(2,1);
+
+%% Jv
+x_q1 = diff(x,q1);
+x_q2 = diff(x,q2);
+x_q3 = diff(x,q3);
+x_q4 = diff(x,q4);
+y_q1 = diff(y,q1);
+y_q2 = diff(y,q2);
+y_q3 = diff(y,q3);
+y_q4 = diff(y,q4);
+z_q1 = diff(z,q1);
+z_q2 = diff(z,q2);
+z_q3 = diff(z,q3);
+z_q4 = diff(z,q4);
+
+%% Jw
+wx_q1 = subs(wx,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wx_q2 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wx_q3 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wx_q4 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+wy_q1 = subs(wy,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wy_q2 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wy_q3 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wy_q4 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+wz_q1 = subs(wz,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wz_q2 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wz_q3 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wz_q4 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+
+%% J
+J1 = [x_q1,y_q1,z_q1,wx_q1,wy_q1,wz_q1]';
+J2 = [x_q2,y_q2,z_q2,wx_q2,wy_q2,wz_q2]';
+J3 = [x_q3,y_q3,z_q3,wx_q3,wy_q3,wz_q3]';
+J4 = [x_q4,y_q4,z_q4,wx_q4,wy_q4,wz_q4]';
+J = simplify([J3,J4]);
+% J = simplify([J2,J3,J4]);
+J = J(1:3,:);
+
+%% verify sigularity: translation
+% old = [q1 q2 q3 q4];
+% new = [0.2 0.3 0.4 0.5];
+% J_num = double(subs(J,old,new))
+% svd(J_num(1:3,:))
+% 
+% new = [0.7 0.4 0.6 0.1];
+% J_num = double(subs(J,old,new))
+% svd(J_num(1:3,:))
+% 
+% new = [0 0 0 0];
+% J_num = double(subs(J,old,new))
+% svd(J_num(1:3,:))
+
+%% verify sigularity: translation+rotation
+% old = [q1 q2 q3 q4];
+% new = [0.2 0.3 0.4 0.5];
+% J_num = double(subs(J,old,new))
+% svd(J_num);
+% 
+% new = [0.7 0.4 0.6 0.1];
+% J_num = double(subs(J,old,new))
+% svd(J_num);
+% 
+% new = [0 0 0 0];
+% J_num = double(subs(J,old,new))
+% svd(J_num);
+% 
+% new = [0 0 0 deg2rad(45)];
+% J_num = double(subs(J,old,new))
+% svd(J_num);
+
+
+
+%% manipulability in the entire workspace
+% save_q2 = deg2rad(-20:4:20);
+% save_q3 = deg2rad(0:5:90);
+% save_q4 = deg2rad(0:5:90);
+%save_q1 = (0:1:29.54)*1e-3;
+% save_q2 = deg2rad(-20:1:20);
+% save_q3 = deg2rad(0:1:90);
+% save_q4 = deg2rad(0:1:90);
+% save_q2 = deg2rad(-20:1:20);
+% save_q3 = deg2rad(0:3:90);
+% save_q4 = deg2rad(0:3:90);
+%save_q1 = linspace(0,29.54*1e-3,20);
+save_q2 = 0;%deg2rad(-20:1:20);
+save_q3 = deg2rad(0:1:90);
+save_q4 = deg2rad(0:1:90);
+save_cond = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_x  = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_y  = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_z  = zeros(length(save_q2),length(save_q3),length(save_q4));
+mf_J = matlabFunction(J)
+mf_p26 = matlabFunction(p26)
+
+for i = 1:length(save_q2) 
+    tic
+    for j = 1:length(save_q3)
+        for k = 1:length(save_q4)
+                q2 = save_q2(i);
+                q3 = save_q3(j);
+                q4 = save_q4(k);
+                save_cond(i,j,k) = cond(mf_J(q3,q4));
+                val = svd(mf_J(q3,q4));
+                save_sig1(i,j,k) = val(1);
+                save_sig2(i,j,k) = val(2);
+                % save_sig3(i,j,k) = val(3);
+                pos = mf_p26(q2,q3,q4);
+                save_x(i,j,k)  = pos(1);
+                save_y(i,j,k)  = pos(2);
+                save_z(i,j,k)  = pos(3);
+%            old = [q1 q2 q3 q4];
+%            new = [0 save_q2(i) save_q3(j) save_q4(k)];
+%             save_cond(i,j,k) = cond(double(subs(J,old,new)));
+%             pos = double(subs(p26,old,new));
+        end
+    end
+    toc
+end
+save('data_jd_noq2.mat','save_q2','save_q3','save_q4','save_x','save_y','save_z','save_cond','save_sig1','save_sig2')% ,'save_sig3'
+
+
+%% plot workspace
+% figure
+% for i = 1:length(save_q2) 
+%     for j = 1:length(save_q3)
+%         for k = 1:length(save_q4)
+%             x = save_x(i,j,k);
+%             y = save_y(i,j,k);
+%             z = save_z(i,j,k);
+%             plot3(x,y,z,'-o')
+%             hold on
+%             grid on
+%         end
+%     end
+% end
+
+% figure
+% for i = 1:length(save_q2) 
+%     for j = 1:length(save_q3)
+%         for k = 1:length(save_q4)
+%             x = save_x(i,j,k);
+%             y = save_y(i,j,k);
+%             z = save_z(i,j,k);
+%             %plot3(x,y,z,'-o','color',)
+%             hold on
+%             %grid on
+%         end
+%     end
+% end
+% figure
+% for i = 1:3:length(save_q2) 
+%     for j = 1:3:length(save_q3)
+%         for k = 1:3:length(save_q4)
+%             save_ = save_x(i,j,k);
+%             save_ = save_y(i,j,k);
+%             save_ = save_z(i,j,k);
+%             plot3(x,y,z,'-o')
+%             hold on
+%             %grid on
+%         end
+%     end
+% end
+
+clear;clc;close all
+load data_jd_noq2.mat
+
+%% 绘制三维散点图，根据值的大小设置颜色
+% figure;
+% m = size(save_x,1)*size(save_x,2)*size(save_x,3)*size(save_x,4);
+% save_x = reshape(save_x,m,1,1);
+% save_y = reshape(save_y,m,1,1);
+% save_z = reshape(save_z,m,1,1);
+% save_sig1 = reshape(save_sig1,m,1,1);
+% save_sig2 = reshape(save_sig2,m,1,1);
+% save_sig3 = reshape(save_sig3,m,1,1);
+% save_cond = reshape(save_cond,m,1,1);
+% save_cond_log = log(save_cond);
+% save_cond_log = save_cond_log/(max(save_cond_log)); %归一化处理
+% save_sigma = 1/save_cond_log;
+% scatter3(save_x, save_y, save_z, 5, save_cond_log, 'filled');
+% colorbar;  % 显示颜色条
+% title('Manipulability in the Entire Workspace');
+% xlabel('X(m)');
+% ylabel('Y(m)');
+% zlabel('Z(m)');
+
+%% 绘制二维散点图，根据值的大小设置颜色
+figure;
+m = size(save_x,1)*size(save_x,2)*size(save_x,3);
+save_x = reshape(save_x,m,1,1);
+save_y = reshape(save_y,m,1,1);
+save_z = reshape(save_z,m,1,1);
+save_sig1 = reshape(save_sig1,m,1,1);
+save_sig2 = reshape(save_sig2,m,1,1);
+%save_sig3 = reshape(save_sig3,m,1,1);
+save_cond = reshape(save_cond,m,1,1);
+save_cond_log = log(save_cond);
+save_cond_log = save_cond_log/(max(save_cond_log)); %归一化处理
+save_sigma = 1/save_cond_log;
+scatter(save_x, save_z, 5, save_cond_log, 'filled');
+colorbar;  % 显示颜色条
+title('Manipulability in the Entire Workspace');
+xlabel('X(m)');
+ylabel('Z(m)');
+
+%% 画椭圆
+figure
+val = 0.9;
+[~,P1_index] = min(abs(save_cond_log-val));
+val = 0.7;
+[~,P2_index] = min(abs(save_cond_log-val));
+val = 0.5;
+[~,P3_index] = min(abs(save_cond_log-val));
+val = 0.3;
+[~,P4_index] = min(abs(save_cond_log-val));
+val = 0.2;
+[~,P5_index] = min(abs(save_cond_log-val));
+val = 0.1;
+[~,P6_index] = min(abs(save_cond_log-val));
+
+
+% 椭球的参数
+center = [0, 0, 0];  % 椭球的中心坐标
+rate = 5;
+figure(2);
+subplot(2,3,1)
+a = 1/save_sig1(P6_index);  % x轴方向的半长轴
+b = 1/save_sig2(P6_index);  % y轴方向的半长轴
+c = 1/save_sig3(P6_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.1');
+grid on;
+axis equal
+
+subplot(2,3,2)
+a = 1/save_sig1(P5_index);  % x轴方向的半长轴
+b = 1/save_sig2(P5_index);  % y轴方向的半长轴
+c = 1/save_sig3(P5_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.2');
+grid on;
+axis equal
+
+subplot(2,3,3)
+a = 1/save_sig1(P4_index);  % x轴方向的半长轴
+b = 1/save_sig2(P4_index);  % y轴方向的半长轴
+c = 1/save_sig3(P4_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.3');
+grid on;
+axis equal
+
+subplot(2,3,4)
+a = 1/save_sig1(P3_index);  % x轴方向的半长轴
+b = 1/save_sig2(P3_index);  % y轴方向的半长轴
+c = 1/save_sig3(P3_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.5');
+grid on;
+axis equal
+
+subplot(2,3,5)
+a = 1/save_sig1(P2_index);  % x轴方向的半长轴
+b = 1/save_sig2(P2_index);  % y轴方向的半长轴
+c = 1/save_sig3(P2_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.7');
+grid on;
+axis equal
+
+subplot(2,3,6)
+a = 1/save_sig1(P1_index);  % x轴方向的半长轴
+b = 1/save_sig2(P1_index);  % y轴方向的半长轴
+c = 1/save_sig3(P1_index);  % z轴方向的半长轴 
+ellipsoid(center(1), center(2), center(3), a, b, c/rate);
+title('cond=0.9');
+grid on;
+axis equal
+
+
+
+
+
+
+
+

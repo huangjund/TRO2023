@@ -1,0 +1,187 @@
+clear all;close all;clc;
+
+rotx = @(t) [1 0 0; 0 cos(t) -sin(t) ; 0 sin(t) cos(t)] ;
+roty = @(t) [cos(t) 0 sin(t) ; 0 1 0 ; -sin(t) 0  cos(t)] ;
+rotz = @(t) [cos(t) -sin(t) 0 ; sin(t) cos(t) 0 ; 0 0 1] ;
+
+syms q1 q2 q3 q4 q5 q6 q7 real
+syms dq1 dq2 dq3 dq4 dq5 dq6 dq7 real
+len_y = -3e-3;
+len_z = 23.3e-3;
+
+H23 = [roty(-pi/6) [-29.54*1e-3+q1; 0; 53.66*1e-3];...
+    0 0 0 1];
+H34 = [rotx(q2) [0; 0; 0];...
+    0 0 0 1];
+H45 = [rotz(pi/2)*rotx(q3) [1.35*1e-3; 0; 9.47*1e-3];...
+    0 0 0 1];
+H56 = [rotx(q4-pi/4) [0;11.11*1e-3;50.86*1e-3];...
+    0 0 0 1];
+H6e = [[1 0 0; 0 1 0; 0 0 1] [0;len_y;len_z];...
+    0 0 0 1];
+
+H27 = [[cos(pi/6) 0 sin(pi/6); 0 1 0; -sin(pi/6) 0 cos(pi/6)] [29.54*1e-3-q1; 0; 53.66*1e-3];...
+    0 0 0 1];
+H78 = [[1 0 0; 0 cos(q5) -sin(q5); 0 sin(q5) cos(q5)] [0; 0; 0];...
+    0 0 0 1];
+H89 = [[cos(-pi/2) -sin(-pi/2) 0; sin(-pi/2) cos(-pi/2) 0; 0 0 1]*...
+    [1 0 0; 0 cos(q6) -sin(q6); 0 sin(q6) cos(q6)] [-1.35*1e-3; 0; 9.47*1e-3];...
+    0 0 0 1];
+H910 = [[1 0 0; 0 cos(q7-pi/4) -sin(q7-pi/4); 0 sin(q7-pi/4) cos(q7-pi/4)] [0;11.11*1e-3;50.86*1e-3];...
+    0 0 0 1];
+
+%% T
+H26 = H23*H34*H45*H56*H6e;
+%H26 = H23*H34*H45*H56;
+p26 = H26(1:3,4);
+R26 = H26(1:3,1:3);
+x = p26(1);
+y = p26(2);
+z = p26(3);
+R = H26(1:3,1:3);
+
+dR_dt = diff(R,q1)*dq1+diff(R,q2)*dq2+diff(R,q3)*dq3+diff(R,q4)*dq4;
+Sw = dR_dt*R';
+wx = Sw(3,2);
+wy = Sw(1,3);
+wz = Sw(2,1);
+
+%% Jv
+x_q1 = diff(x,q1);
+x_q2 = diff(x,q2);
+x_q3 = diff(x,q3);
+x_q4 = diff(x,q4);
+y_q1 = diff(y,q1);
+y_q2 = diff(y,q2);
+y_q3 = diff(y,q3);
+y_q4 = diff(y,q4);
+z_q1 = diff(z,q1);
+z_q2 = diff(z,q2);
+z_q3 = diff(z,q3);
+z_q4 = diff(z,q4);
+
+%% Jw
+wx_q1 = subs(wx,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wx_q2 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wx_q3 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wx_q4 = subs(wx,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+wy_q1 = subs(wy,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wy_q2 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wy_q3 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wy_q4 = subs(wy,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+wz_q1 = subs(wz,[dq1 dq2 dq3 dq4],sym([1 0 0 0]));
+wz_q2 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 1 0 0]));
+wz_q3 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 0 1 0]));
+wz_q4 = subs(wz,[dq1 dq2 dq3 dq4],sym([0 0 0 1]));
+
+%% J
+J1 = [x_q1,y_q1,z_q1,wx_q1,wy_q1,wz_q1]';
+J2 = [x_q2,y_q2,z_q2,wx_q2,wy_q2,wz_q2]';
+J3 = [x_q3,y_q3,z_q3,wx_q3,wy_q3,wz_q3]';
+J4 = [x_q4,y_q4,z_q4,wx_q4,wy_q4,wz_q4]';
+%J = simplify([J1,J2,J3,J4]);
+J = simplify([J1,J2,J3,J4]);
+%J = J(1:3,:);
+
+
+%% manipulability in the entire workspace
+% save_q2 = deg2rad(-20:4:20);
+% save_q3 = deg2rad(0:5:90);
+% save_q4 = deg2rad(0:5:90);
+%save_q1 = (0:1:29.54)*1e-3;
+% save_q2 = deg2rad(-20:1:20);
+% save_q3 = deg2rad(0:1:90);
+% save_q4 = deg2rad(0:1:90);
+% save_q2 = deg2rad(-20:1:20);
+% save_q3 = deg2rad(0:3:90);
+% save_q4 = deg2rad(0:3:90);
+save_q2 = deg2rad(-20:4:20);%deg2rad(20);
+save_q3 = deg2rad(0:4:90);
+save_q4 = deg2rad(0:4:90);
+save_cond = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_x  = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_y  = zeros(length(save_q2),length(save_q3),length(save_q4));
+save_z  = zeros(length(save_q2),length(save_q3),length(save_q4));
+mf_J = matlabFunction(J)
+mf_p26 = matlabFunction(p26)
+mf_inv_R26 = matlabFunction(R26')
+
+syms ka11 ka22 ka33 ka44 temp real
+Ka = diag([1, 1, 1, 1]);
+Ja = [1 0 0 0; 0 1 -1 0; 0 1 1 0; 0 0 0 1];
+Kq = inv(Ja')*Ka*inv(Ja);
+Ca = inv(Ka);
+Cq = Ja*Ca*Ja';
+% Jq = mf_J(0,0,0);
+H = [1 0 0 0 0 0;0 1 0 0 0 0; 0 0 1 0 0 0];
+% Cf= (Jq*Cq*Jq');
+% Ctr = H*Cf*H';
+% Kp = (H'*inv(Ctr)*H);
+%Kp = vpa(subs(Kp,{ka11,ka22,ka33,ka44},{1,1,1,1}));
+
+figure;
+ax = axes('XLim', [-2,2], 'YLim',[-2,2],'ZLim',[-2,2]);
+view(3);
+
+grid on;
+
+ax.XLabel.String = 'X-axis';
+ylabel('Y-axis');
+zlabel('Z-axis');
+hold on;
+
+h1x = quiver3(0,0,0,1,0,0,0,'r','LineWidth',2, 'DisplayName', 'X');
+h1y = quiver3(0,0,0,0,1,0,0,'g','LineWidth',2,'DisplayName', 'Y');
+h1z = quiver3(0,0,0,0,0,1,0,'b','LineWidth',2,'DisplayName', 'Z');
+
+h2x = quiver3(0,0,0,1,0,0,0,'k','LineWidth',2, 'DisplayName', 'X');
+h2y = quiver3(0,0,0,0,1,0,0,'k','LineWidth',2,'DisplayName', 'Y');
+h2z = quiver3(0,0,0,0,0,1,0,'y','LineWidth',2,'DisplayName', 'Z');
+
+for k = 1:length(save_q4)
+    tic
+    for j = 1:length(save_q3)
+        for i = 1:length(save_q2)
+            q2 = save_q2(i);
+            q3 = save_q3(j);
+            q4 = save_q4(k);
+            invR = mf_inv_R26(q2,q3,q4);
+            Jq = [invR zeros(3,3); zeros(3,3) invR]*mf_J(q2,q3,q4);
+            Cf = (Jq*Cq*Jq');
+            Ctr = H*Cf*H';
+            Kp = inv(Ctr);
+            Kb = invR'*Kp*invR;
+%             save_cond(i,j,k) = cond(Kp);
+%             save_cond_xyz(i,j,k) = cond(Kp(1:3,1:3));
+            [axis,val] = svd(Kb)
+            rad2deg([q2,q3,q4])
+            save_sig1(i,j,k) = val(1,1);
+            save_sig2(i,j,k) = val(2,2);
+            save_sig3(i,j,k) = val(3,3);
+            pos = mf_p26(0,q2,q3,q4);
+            save_x(i,j,k)  = pos(1);
+            save_y(i,j,k)  = pos(2);
+            save_z(i,j,k)  = pos(3);
+            
+            set(h1x,'UData',invR(1,1), 'VData',invR(1,2),'WData',invR(1,3));
+            set(h1y,'UData',invR(2,1), 'VData',invR(2,2),'WData',invR(2,3));
+            set(h1z,'UData',invR(3,1), 'VData',invR(3,2),'WData',invR(3,3));
+            
+            %axis = invR'*axis
+            set(h2x,'UData',axis(1,1), 'VData',axis(2,1),'WData',axis(3,1));
+            set(h2y,'UData',axis(1,2), 'VData',axis(2,2),'WData',axis(3,2));
+            set(h2z,'UData',axis(1,3), 'VData',axis(2,3),'WData',axis(3,3));
+            drawnow;
+        end
+    end
+    toc
+end
+save('compliance_data_q1234.mat','save_q2','save_q3','save_q4','save_x','save_y','save_z','save_cond','save_sig1','save_sig2','save_sig3','save_sig4','save_cond_xyz','save_sig1_xyz','save_sig2_xyz','save_sig3_xyz')
+
+%% 坐标
+% -4    68     4
+% 0    72     4
+% 0    76     4
+% 0    76     0
+
+
